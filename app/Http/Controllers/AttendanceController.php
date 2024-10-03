@@ -14,7 +14,6 @@ class AttendanceController extends Controller
         $id = $request->json('id'); 
         var_dump($request->method());
         var_dump($request->input('id'));
-        var_dump($request->getContent());
         var_dump($id);
 
         // Find the user by their id

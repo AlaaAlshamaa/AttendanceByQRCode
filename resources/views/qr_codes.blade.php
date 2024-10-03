@@ -38,7 +38,9 @@
 </style>
 </head>
 <body>
+
 <div class="a4-container">
+</br></br></br>
     <div class="row">
 
     @foreach ($qrCodes as $data)

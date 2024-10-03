@@ -13,4 +13,9 @@ class attendance extends Model
         'student_id',
         'scanned_at',
     ];
+    
+    public function student()
+{
+    return $this->belongsTo(Student::class);
+}
 }

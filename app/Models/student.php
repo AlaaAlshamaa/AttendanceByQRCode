@@ -12,6 +12,10 @@ class student extends Model
     protected $fillable = [
         'name',
         'phone',
-        'registered_at'
     ];
+
+    public function attendances()
+{
+    return $this->hasMany(Attendance::class);
+}
 }

@@ -33,7 +33,7 @@ public function generateQrCodesForAllStudents()
             $url = 'http://172.16.58.85:8000/api/scan?id=' . $student->id;
     
             // Generate the QR code (QR code is returned as HTML)
-            $qrCode = QrCode::size(56.67 )  ->color(59, 30, 0) ->generate($url);
+            $qrCode = QrCode::size(52 )  ->color(0, 0, 0) ->generate($url);
     
             // Add student name and QR code to the array
             $qrCodes[] = [
