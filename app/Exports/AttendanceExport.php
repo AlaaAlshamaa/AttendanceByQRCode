@@ -67,4 +67,5 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping
 
         return $attendanceMap;
     }
+    
 }

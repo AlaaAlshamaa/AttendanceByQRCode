@@ -13,6 +13,7 @@
   padding: 5px;
 }
 
+
 /* Clearfix (clear floats) */
 
 .row::after {

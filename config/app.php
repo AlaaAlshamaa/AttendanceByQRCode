@@ -214,5 +214,4 @@ return [
         'Excel' => Maatwebsite\Excel\Facades\Excel::class,
           // 'ExampleClass' => App\Example\ExampleClass::class,
          ])->toArray(),
-
 ];
