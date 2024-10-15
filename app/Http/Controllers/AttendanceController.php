@@ -12,9 +12,6 @@ class AttendanceController extends Controller
     {
         $studentId = $request->query('id') ?? $request->getContent();
         $id = $request->json('id'); 
-        var_dump($request->method());
-        var_dump($request->input('id'));
-        var_dump($id);
 
         // Find the user by their id
         $student = Student::where('id', $studentId)->first();
@@ -26,11 +23,9 @@ class AttendanceController extends Controller
                 'scanned_at' => now(),
             ]);
 
-            return response()->json(['message' => 'Attendance recorded!'], 200);
-        }
+           return response('<p style="font-size: 70px;"> Attendance recorded! </br>'.$student->name.'</br>'.$student->id.' </p>', 200)
+           ->header('Content-Type', 'text/html');}
 
         return response()->json(['message' => 'Student not found!'], 404);
     }
-
-    
 }
