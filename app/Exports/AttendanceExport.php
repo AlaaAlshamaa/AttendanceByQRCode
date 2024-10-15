@@ -1,19 +1,24 @@
 <?php
+
 namespace App\Exports;
 
-use App\Models\Student;
-use App\Models\Attendance;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Color;
+use App\Models\Attendance;
 
-class AttendanceExport implements FromCollection, WithHeadings, WithMapping  
+class AttendanceExport implements FromArray, WithHeadings, WithStyles
 {
-    // Store unique session dates grouped by day
+    protected $students;
     protected $sessionDates;
 
-    public function __construct()
+    public function __construct($students, $sessionDates)
     {
+        $this->students = $students;
+
         // Group attendance by distinct session dates (grouped by day)
         $this->sessionDates = Attendance::selectRaw('DATE(scanned_at) as day')
             ->distinct()
@@ -21,51 +26,84 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping
             ->toArray();
     }
 
-    public function collection()
+    // The array method builds the data for the Excel file
+    public function array(): array
     {
-        // Get all students with their attendance records
-        return Student::with('attendances')->get();
+        $data = [];
+
+        foreach ($this->students as $student) {
+            $attendanceMap = [];
+            // Check attendance for each session date grouped by day
+            foreach ($this->sessionDates as $sessionDay) {
+                // Check if the student attended on this day
+                $attendedOnDay = $student->attendances
+                    ->where('scanned_at', '>=', $sessionDay . ' 00:00:00')
+                    ->where('scanned_at', '<=', $sessionDay . ' 23:59:59')
+                    ->isNotEmpty();
+                // Use 'م' for present and 'غ' for absent
+                $attendanceMap[] = $attendedOnDay ? 'م' : 'غ'; 
+            }
+
+            $data[] = array_merge(
+                [$student->id, $student->name],
+                $attendanceMap
+            );
+        }
+
+        return $data;
     }
 
+    // The headings method defines the column headers
     public function headings(): array
     {
-        // Merge headers for the student ID, name, session dates, and total attendance
-        return array_merge(['id', 'name'], $this->sessionDates, ['Total Days Attended']);
+        return array_merge(['ID', 'Name'], $this->sessionDates);
     }
 
-    public function map($student): array
+    // The styles method applies styling to specific cells or rows
+    public function styles(Worksheet $sheet)
     {
-        // Array to hold the student data
-        $attendanceMap = [];
+        // Set header row styles (bold text, background color)
+        $sheet->getStyle('A1:Z1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'], // Set the font color (white)
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '4CAF50'], // Green background color
+            ],
+        ]);
 
-        // Add student ID and name as the first columns
-        $attendanceMap[] = $student->id;
-        $attendanceMap[] = $student->name;
+        // Loop through rows to apply conditional styling for attendance
+        $highestRow = $sheet->getHighestRow();
+        for ($i = 2; $i <= $highestRow; $i++) {
+            foreach (range('C', $sheet->getHighestColumn()) as $col) {
+                $cell = $col . $i;
+                $cellValue = $sheet->getCell($cell)->getValue();
 
-        // Variable to track total attendance days
-        $totalDaysAttended = 0;
-
-        // Check attendance for each session date grouped by day
-        foreach ($this->sessionDates as $sessionDay) {
-            // Check if the student attended on this day
-            $attendedOnDay = $student->attendances
-                ->where('scanned_at', '>=', $sessionDay . ' 00:00:00')
-                ->where('scanned_at', '<=', $sessionDay . ' 23:59:59')
-                ->isNotEmpty();
-
-            // If attended, add 1; otherwise, add 0
-            $attendanceMap[] = $attendedOnDay ? 'م' : 'غ';
-
-            // Increment the total days attended count
-            if ($attendedOnDay) {
-                $totalDaysAttended++;
+                // Apply conditional styling based on attendance ('م' for present, 'غ' for absent)
+                if ($cellValue === 'م') {
+                    $sheet->getStyle($cell)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => [
+                                'rgb' => 'abf7b1', // Green for present
+                            ],
+                        ],
+                    ]);
+                } elseif ($cellValue === 'غ') {
+                    $sheet->getStyle($cell)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => [
+                                'rgb' => 'f69697', // Red for absent
+                            ],
+                        ],
+                    ]);
+                }
             }
         }
 
-        // Add the total days attended at the end of the row
-        $attendanceMap[] = $totalDaysAttended;
-
-        return $attendanceMap;
+        return [];
     }
-    
 }

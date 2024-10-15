@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StudentController;
 use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\AttendanceController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -19,6 +20,5 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/export-attendance', function () {
-    return Excel::download(new AttendanceExport, 'student_attendance.xlsx');
-});
+Route::get('/export-attendance', [AttendanceController::class, 'exportAttendance']);
+
